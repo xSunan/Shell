@@ -43,29 +43,74 @@ void sub_commands(char* command, char** all_sub_cmds){
 
 }
 
+void  parse(char *line, char **argv)
+{
+	while (*line != '\0') {
+		while (*line == ' ' || *line == '\t' || *line == '\n')
+			*line++ = '\0';
+		*argv++ = line;
+		while (*line != '\0' && *line != ' ' && 
+				*line != '\t' && *line != '\n') 
+			line++;
+	}
+	*argv = '\0';
+}
+
+pid_t execute(char **command, int concurrent)
+{
+    pid_t pid;
+    int status;
+
+    if ((pid = fork()) < 0) {
+        printf("*** ERROR: forking child process failed\n");
+        exit(1);
+    }
+    else if (pid == 0) {
+        // child process
+        sleep(2);
+        if (execvp(*command, command) < 0) {
+            printf("*** ERROR: exec failed\n");
+            exit(1);
+        }
+    }
+    else  {
+        if (concurrent == 0) {
+            while (wait(&status) != pid) {
+                continue;
+            }
+        }
+    }
+    return pid;
+}
+
+void execute_all_commands(char **all_commands, int status)
+{
+	char *single_command[64];
+	pid_t pids[COMMAND_NUM];
+	int st[COMMAND_NUM], count=0;
+	while(*all_commands!=NULL){
+		parse(*all_commands++, single_command);
+		pids[count++] = execute(single_command, status);
+	}
+	if (status == 1) {
+		for (int i = 0; i < count; i++) {
+			waitpid(pids[i], &st[i], 0);
+		}
+	}
+}
+
 int main(){
 	char input_line[COMMAND_LEN];
-  
     char *all_commands[COMMAND_NUM];
     char *command;
-    
-    // scanf("s", command)
 
     fgets(input_line, COMMAND_LEN, stdin); 
-	// printf(input_line);
 	
-	int concurrent = extract_all_commands(input_line, all_commands);
-	
-	int i=0;
+	// status = 1 means concurrent, 0 means serial
+	int status = extract_all_commands(input_line, all_commands);
 	char *all_sub_cmds[COMMAND_NUM];
-
-	while(all_commands[i]!=NULL){
-		sub_commands(all_commands[i++],all_sub_cmds);
-	}
-
 	
-
-
+	execute_all_commands(all_commands, status);
 }
 
 
