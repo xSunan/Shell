@@ -45,23 +45,22 @@ void sub_commands(char* command, char** all_sub_cmds){
 
 int main(){
 	char input_line[COMMAND_LEN];
-  
+ 
     char *all_commands[COMMAND_NUM];
-    char *command;
+    char *all_sub_cmds[COMMAND_NUM];
     
-    // scanf("s", command)
 
     fgets(input_line, COMMAND_LEN, stdin); 
-	// printf(input_line);
 	
 	int concurrent = extract_all_commands(input_line, all_commands);
 	
 	int i=0;
-	char *all_sub_cmds[COMMAND_NUM];
+	
 
 	while(all_commands[i]!=NULL){
 		sub_commands(all_commands[i++],all_sub_cmds);
 	}
+
 
 	
 
