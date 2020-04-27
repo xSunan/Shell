@@ -147,22 +147,21 @@ void redirect(char** all_sub_cmds, int redirection){
 				exit(EXIT_FAILURE);
 			}
 			waitpid(pid,NULL,0);
-			printf("here\n");
 			
-
-			// char out_put[OUT_PUT_LEN];
-			
-			// printf("miao\n");
-			// nbytes = read(dir_output[0], out_put, sizeof(out_put));
-			// printf("nbytes:%d\n", nbytes);
-			// printf("out_put: (%.*s)  \n", nbytes,out_put);
+			if(all_sub_cmds[i+1] == NULL){
+				char out_put[OUT_PUT_LEN];
+				
+				printf("miao\n");
+				nbytes = read(dir_output[0], out_put, sizeof(out_put));
+				printf("nbytes:%d\n", nbytes);
+				printf("out_put: (%.*s)  \n", nbytes,out_put);
+			}
 							
 			
 			close(dir_output[0]);
 		} 
 
 		i++;
-		printf("i: %d", i);
 	}
 	printf("finish");
 }
@@ -192,11 +191,7 @@ pid_t execute(char *command, int concurrent)
         } else if(redirection == 1){
         	redirect(all_sub_cmds, 1);
         } else {
-        	//  |
-        	int i=0;
-        	while(all_sub_cmds[i] != NULL){
-        		printf("%s \n", all_sub_cmds[i++]);
-        	}
+        	
         	redirect(all_sub_cmds, 2);
         }
         // exit(0);
@@ -236,20 +231,7 @@ int main(){
     char *all_commands[COMMAND_NUM];    
 
     fgets(input_line, COMMAND_LEN, stdin); 
- //    char *single_command[64];
-    // parse(input_line, single_command);
-	// execvp(*single_command, single_command);
-	// char  *command1[10], *command2[10];
-	//  for (int i = 0; i < 10; i++) {
- //        command1[i] = NULL;
- //        command2[i] = NULL;
- //    }
-
-	// command1[0] = "ls";
-	// command1[1] = "-l";
-	// command1[2] = "\0";
-	// execvp(*command1, command1);
-
+ 
 	// status = 1 means concurrent, 0 means serial
 	int status = extract_all_commands(input_line, all_commands);
 	execute_all_commands(all_commands, status);
