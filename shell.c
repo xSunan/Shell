@@ -106,7 +106,7 @@ int parse(char *command, char **argv)
 	return i;
 }
 
-void redirect(char** all_sub_cmds, int redirection){
+void pipe_line(char** all_sub_cmds, int redirection){
 	pid_t pid;
 	int i=0, nbytes=0, argv_cnt, status;
 	int dir_output[2];
@@ -126,7 +126,7 @@ void redirect(char** all_sub_cmds, int redirection){
 			char *argvs[ARGV_LEN];
 			parse(all_sub_cmds[i], argvs);
 			
-			if (dir_output[1]!=STDOUT_FILENO){
+			if (all_sub_cmds[i+1] != NULL && dir_output[1]!=STDOUT_FILENO){
 				printf("need connection\n");
 				dup2 (dir_output[1], STDOUT_FILENO);
 				close(dir_output[1]);
@@ -148,14 +148,14 @@ void redirect(char** all_sub_cmds, int redirection){
 			}
 			waitpid(pid,NULL,0);
 			
-			if(all_sub_cmds[i+1] == NULL){
-				char out_put[OUT_PUT_LEN];
+			// if(all_sub_cmds[i+1] == NULL){
+			// 	char out_put[OUT_PUT_LEN];
 				
-				printf("miao\n");
-				nbytes = read(dir_output[0], out_put, sizeof(out_put));
-				printf("nbytes:%d\n", nbytes);
-				printf("out_put: (%.*s)  \n", nbytes,out_put);
-			}
+			// 	printf("miao\n");
+			// 	nbytes = read(dir_output[0], out_put, sizeof(out_put));
+			// 	printf("nbytes:%d\n", nbytes);
+			// 	printf("out_put: (%.*s)  \n", nbytes,out_put);
+			// }
 							
 			
 			close(dir_output[0]);
@@ -177,6 +177,7 @@ pid_t execute(char *command, int concurrent)
     }
     else if (pid == 0) {
         // child process
+        sleep(3);
         char *all_sub_cmds[COMMAND_NUM];
         printf("here");
         redirection = sub_commands(command, all_sub_cmds);
@@ -189,10 +190,10 @@ pid_t execute(char *command, int concurrent)
             	exit(1);
         	} 
         } else if(redirection == 1){
-        	redirect(all_sub_cmds, 1);
+        	// redirect(all_sub_cmds, 1);
         } else {
         	
-        	redirect(all_sub_cmds, 2);
+        	pipe_line(all_sub_cmds, 2);
         }
         // exit(0);
     }
