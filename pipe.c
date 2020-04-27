@@ -15,10 +15,30 @@ int main() {
 	  if ((pid = fork()) == -1)
 	    die("fork");
 
-	  if(pid == 0) {
+	  if(pid > 0) {
 	    // dup2 (link[1], STDOUT_FILENO);
 	    // // close(link[0]);
 	    // // close(link[1]);
+	    
+	    char *out = "shell.c";
+	   
+	    dup2(link[1], STDIN_FILENO);
+	    // command[1] = "-l";
+	    // dup2 (link[1], STDOUT_FILENO);
+	    // execvp(*command1, command1);
+
+	    // // close(link[0]);
+    	// // close(link[1]);
+	    // die("execvp");
+	    printf("here\n");
+	    exit(0);
+
+	  } 
+	  
+
+	   
+	  	printf("miao\n");
+	  	waitpid(pid, NULL,0);
 	    char  *command1[10], *command2[10];
 	    int st1, st2;
 	    for (int i = 0; i < 10; i++) {
@@ -26,29 +46,13 @@ int main() {
 	        command2[i] = NULL;
 	    }
 
-	    command1[0] = "ls";
+	    command1[0] = "cat";
 
-	    command2[0] = "ls";
-	    command2[1] = "..";
-
-	   
-
-	    // command[1] = "-l";
-	    dup2 (link[1], STDOUT_FILENO);
+	    command1[1] = NULL;
 	    execvp(*command1, command1);
-	     
-	    // close(link[0]);
-    	// close(link[1]);
-	    die("execvp");
+	    // int nbytes = read(link[0], foo, sizeof(foo));
+	    // printf("Output: (%.*s)\n", nbytes, foo);
 
-	  } 
-	  else {
-
-	    // close(link[1]);
-	    int nbytes = read(link[0], foo, sizeof(foo));
-	    printf("Output: (%.*s)\n", nbytes, foo);
-	    wait(NULL);
-
-	  }
+	  
 	  return 0;
  }

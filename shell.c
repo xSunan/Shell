@@ -30,7 +30,6 @@ int extract_all_commands(char* input, char** all_commands){
 	char *command = strtok(input, delim);   	
 	int i=0;
 	while(command != NULL ) {
-		printf("command: %s\n", command);
 		all_commands[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
 		all_commands[i++] = command;
 	  	command = strtok(NULL, delim);
@@ -65,15 +64,29 @@ int sub_commands(char* command, char** all_sub_cmds){
 	char *sub_cmd = strtok(command, delim_pipe);   	
 	int i=0;
 	while(sub_cmd != NULL && strlen(sub_cmd)>0) {
-		printf("sub: %s\n", sub_cmd);
 		all_sub_cmds[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
 		all_sub_cmds[i++] =sub_cmd;
 	  	sub_cmd = strtok(NULL, delim_pipe);
 	}
 	all_sub_cmds[i] = NULL;
-	printf("miao end sub\n");
 	return redirection;
 }	
+
+// int  parse(char *line, char **argv)
+// {
+// 	int count=0;
+// 	while (*line != '\0') {
+// 		while (*line == ' ' || *line == '\t' || *line == '\n')
+// 			*line++ = '\0';
+// 		count++;
+// 		*argv++ = line;
+// 		while (*line != '\0' && *line != ' ' && 
+// 				*line != '\t' && *line != '\n') 
+// 			line++;
+// 	}
+// 	*argv = '\0';
+// 	return count;
+// }
 
 int parse(char *command, char **argv)
 {
@@ -82,68 +95,74 @@ int parse(char *command, char **argv)
 	int i=0;
 
 	while(arg != NULL && strlen(arg)>0) {
-		printf("arg: %s\n", arg);
 		argv[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
+
 		argv[i++] =arg;
 	  	arg = strtok(NULL, delim);
 	}
-	arg[i] = NULL;
-	printf("return\n");
+	for(int j=i;j<ARGV_LEN;j++){
+		argv[j] = NULL;
+	}
 	return i;
 }
 
 void redirect(char** all_sub_cmds, int redirection){
 	pid_t pid;
 	int i=0, nbytes=0, argv_cnt, status;
-	int dir_input[2], dir_output[2];
-	if (pipe(dir_input)==-1){
-		fprintf("%s\n", stderr); 
-		exit(EXIT_FAILURE);
-	}
-
-	if(pipe(dir_output) == -1){
-		fprintf("%s\n", stderr); 
-		exit(EXIT_FAILURE);
-	}
+	int dir_output[2];
+	
 
 	while(all_sub_cmds[i] != NULL){
 		printf("inside: cmd %s \n", all_sub_cmds[i]);
+	
+		if(pipe(dir_output) == -1){
+			fprintf("%s\n", stderr); 
+			exit(EXIT_FAILURE);
+		}
 
 		if((pid = fork())==0){
-			char readin[OUT_PUT_LEN];
-			if(i>=1)
-				nbytes = read(dir_input[0], readin, sizeof(readin));
-			printf("nbytes:%d\n", nbytes);
+			
 
 			char *argvs[ARGV_LEN];
-			argv_cnt = parse(all_sub_cmds[i], argvs);
-
-			printf("argv_cnt:%d\n", argv_cnt);
-
-			if (nbytes !=0){
-				argvs[argv_cnt] = readin;
+			parse(all_sub_cmds[i], argvs);
+			
+			if (dir_output[1]!=STDOUT_FILENO){
+				printf("need connection\n");
+				dup2 (dir_output[1], STDOUT_FILENO);
+				close(dir_output[1]);
 			}
-
-			// pass the file descriptor of stdout to pipe
-			dup2 (dir_output[1], STDOUT_FILENO);
-
+			// char *cmd = argvs[0];
 			if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
             	exit(1);
         	} else {
         		exit(0);
         	}
+        	
 
+		} else {
+			
+			close(dir_output[1]);
+			if (dup2(dir_output[0], STDIN_FILENO) == -1) {
+				exit(EXIT_FAILURE);
+			}
+			waitpid(pid,NULL,0);
+			printf("here\n");
+			
+
+			// char out_put[OUT_PUT_LEN];
+			
+			// printf("miao\n");
+			// nbytes = read(dir_output[0], out_put, sizeof(out_put));
+			// printf("nbytes:%d\n", nbytes);
+			// printf("out_put: (%.*s)  \n", nbytes,out_put);
+							
+			
+			close(dir_output[0]);
 		} 
-		waitpid(pid,&status,0);
-		// if (status == pid){
-			printf("succeed\n");
-			char out_put[OUT_PUT_LEN];
-			nbytes = read(dir_output[0], out_put, sizeof(out_put));
-			printf("out_put: (%.*s)  \n", nbytes,out_put);
-			write(dir_input[1], out_put, sizeof(out_put));
-		// }
+
 		i++;
+		printf("i: %d", i);
 	}
 	printf("finish");
 }
@@ -169,9 +188,7 @@ pid_t execute(char *command, int concurrent)
         	if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
             	exit(1);
-        	} else {
-        		exit(0);
-        	}
+        	} 
         } else if(redirection == 1){
         	redirect(all_sub_cmds, 1);
         } else {
@@ -219,10 +236,24 @@ int main(){
     char *all_commands[COMMAND_NUM];    
 
     fgets(input_line, COMMAND_LEN, stdin); 
-	
+ //    char *single_command[64];
+    // parse(input_line, single_command);
+	// execvp(*single_command, single_command);
+	// char  *command1[10], *command2[10];
+	//  for (int i = 0; i < 10; i++) {
+ //        command1[i] = NULL;
+ //        command2[i] = NULL;
+ //    }
+
+	// command1[0] = "ls";
+	// command1[1] = "-l";
+	// command1[2] = "\0";
+	// execvp(*command1, command1);
+
 	// status = 1 means concurrent, 0 means serial
 	int status = extract_all_commands(input_line, all_commands);
 	execute_all_commands(all_commands, status);
+
 }
 
 
