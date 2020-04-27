@@ -3,16 +3,25 @@
 #include <stdlib.h>
 
 int main(){
-	pid_t child_pid;
+	pid_t pid;
+	int link[2];
+
 	for (int i=0;i<3;i++){
-
-		if ( (child_pid=fork()) == 0){
+		
+		pid = fork();
+		
+		if ( pid == 0){
 			// a>b 
-			printf("here id: %d\n", getpid());
+			printf("here child  execute id: %d\n", getpid());
+			sleep(5);
+			exit(0);
 
-		} else{
-			printf("parent miao\n");
-		}
+		} 
+		// printf("wait \n");
+		waitpid(pid,NULL,0);
+		printf("parent  childfinish\n");
+
+		
 		
 	}
 }
