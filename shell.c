@@ -183,7 +183,7 @@ pid_t execute(char *command, int concurrent)
         redirection = sub_commands(command, all_sub_cmds);
         printf("redirection: %d, %s\n", redirection, command);
         if (redirection == 0){
-        	char ** argvs;
+        	char *argvs[ARGV_LEN];
         	argv_num = parse(command, argvs);
         	if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
