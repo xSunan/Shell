@@ -2,11 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "build_in_command.c"
 
 #define COMMAND_LEN 50
 #define ARGV_LEN 150
 #define COMMAND_NUM 20
 #define OUT_PUT_LEN 4090
+
+char *build_in_commands = "cd echo pwd bye";
 
 /*
 
@@ -168,7 +171,11 @@ void redirect(char** all_sub_cmds, int redirection) {
     fclose(fp);
     file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
     dup2(file_desc, STDOUT_FILENO);
-    if (execvp(*command, command) < 0) {
+	if (strstr(build_in_commands, command[0]) != NULL) {
+		execute_build_in_command(command);
+		exit(0);
+	}
+    else if (execvp(*command, command) < 0) {
         printf("*** ERROR: exec failed\n");
         exit(1);
  }
@@ -185,7 +192,7 @@ pid_t execute(char *command, int concurrent)
     }
     else if (pid == 0) {
         // child process
-        sleep(3);
+        sleep(1);
         char *all_sub_cmds[COMMAND_NUM];
         printf("here");
         redirection = sub_commands(command, all_sub_cmds);
@@ -193,12 +200,16 @@ pid_t execute(char *command, int concurrent)
         if (redirection == 0){
         	char *argvs[ARGV_LEN];
         	argv_num = parse(command, argvs);
-        	if (execvp(*argvs, argvs) < 0) {
+			if (strstr(build_in_commands, argvs[0]) != NULL) {
+				execute_build_in_command(argvs);
+				exit(0);
+			}
+        	else if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
             	exit(1);
         	} 
         } else if(redirection == 1){
-        	// redirect(all_sub_cmds, 1);
+        	redirect(all_sub_cmds, 1);
         } else {
         	
         	pipe_line(all_sub_cmds, 2);
