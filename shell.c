@@ -72,21 +72,6 @@ int sub_commands(char* command, char** all_sub_cmds){
 	return redirection;
 }	
 
-// int  parse(char *line, char **argv)
-// {
-// 	int count=0;
-// 	while (*line != '\0') {
-// 		while (*line == ' ' || *line == '\t' || *line == '\n')
-// 			*line++ = '\0';
-// 		count++;
-// 		*argv++ = line;
-// 		while (*line != '\0' && *line != ' ' && 
-// 				*line != '\t' && *line != '\n') 
-// 			line++;
-// 	}
-// 	*argv = '\0';
-// 	return count;
-// }
 
 int parse(char *command, char **argv)
 {
@@ -131,14 +116,13 @@ void pipe_line(char** all_sub_cmds, int redirection){
 				dup2 (dir_output[1], STDOUT_FILENO);
 				close(dir_output[1]);
 			}
-			// char *cmd = argvs[0];
+
 			if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
             	exit(1);
         	} else {
         		exit(0);
         	}
-        	
 
 		} else {
 			
@@ -166,6 +150,30 @@ void pipe_line(char** all_sub_cmds, int redirection){
 	printf("finish");
 }
 
+void redirect(char** all_sub_cmds, int redirection) {
+    char *command[ARGV_LEN];
+    char *filename[ARGV_LEN];
+    int file_desc;
+    FILE *fp;
+
+    parse(all_sub_cmds[0], command);
+    parse(all_sub_cmds[1], filename);
+    if (filename[0] == NULL || filename[1] != NULL ) {
+        // invalid filename
+        printf("Invalid filename.\n");
+        return;
+    }
+
+    fp = fopen(filename[0], "w");
+    fclose(fp);
+    file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
+    dup2(file_desc, STDOUT_FILENO);
+    if (execvp(*command, command) < 0) {
+        printf("*** ERROR: exec failed\n");
+        exit(1);
+ }
+
+}
 pid_t execute(char *command, int concurrent)
 {
     pid_t pid;
