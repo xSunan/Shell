@@ -119,8 +119,11 @@ void pipe_line(char** all_sub_cmds, int redirection){
 				dup2 (dir_output[1], STDOUT_FILENO);
 				close(dir_output[1]);
 			}
-
-			if (execvp(*argvs, argvs) < 0) {
+			if (strstr(build_in_commands, argvs[0]) != NULL) {
+				execute_build_in_command(argvs);
+				exit(0);
+			}
+			else if (execvp(*argvs, argvs) < 0) {
             	printf("*** ERROR: exec failed\n");
             	exit(1);
         	} else {
