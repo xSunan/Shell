@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "build_in_command.c"
 
 #define COMMAND_LEN 50
 #define ARGV_LEN 150
 #define COMMAND_NUM 20
 #define OUT_PUT_LEN 4090
+
+char *build_in_commands = "cd echo pwd bye";
 
 /*
 
@@ -18,7 +21,7 @@ Divide the input line into multiple commands
 
 */
 int extract_all_commands(char* input, char** all_commands){
-	int concurrent;
+	int concurrent=0;
 	const char delim[3]= "&;";
 
 	if(strchr(input, '&') != NULL){
@@ -90,74 +93,90 @@ int parse(char *command, char **argv)
 	for(int j=i;j<ARGV_LEN;j++){
 		argv[j] = NULL;
 	}
+	printf("parse count: %d\n", i);
 	return i;
 }
 
-void pipe_line(char** all_sub_cmds, int redirection){
-	pid_t pid;
+pid_t pipe_line(char** all_sub_cmds, int concurrent){
+	pid_t pid, total_pid;
 	int i=0, nbytes=0, argv_cnt, status;
 	int dir_output[2];
-	
+	total_pid = fork();
 
-	while(all_sub_cmds[i] != NULL){
-		// printf("inside: cmd %s \n", all_sub_cmds[i]);
-	
-		if(pipe(dir_output) == -1){
-			fprintf("%s\n", stderr); 
-			exit(EXIT_FAILURE);
-		}
-
-		if((pid = fork())==0){
-
-			char *argvs[ARGV_LEN];
-			parse(all_sub_cmds[i], argvs);
-			close(dir_output[0]);
-			if (all_sub_cmds[i+1] != NULL && dir_output[1]!=STDOUT_FILENO){
-				// printf("need connection\n");
-				dup2 (dir_output[1], STDOUT_FILENO);
-				close(dir_output[1]);
-			}
-
-			if (execvp(*argvs, argvs) < 0) {
-				printf("pipe line sub_commands %s\n", all_sub_cmds[i]);
-            	printf("*** ERROR: exec failed\n");
-            	exit(1);
-        	} 
-
-        	exit(0);
-        	
-
-		} else {
-			
-			close(dir_output[1]);
-			if (dup2(dir_output[0], STDIN_FILENO) == -1) {
+	if(total_pid == 0){
+		while(all_sub_cmds[i] != NULL){
+			// printf("inside: cmd %s \n", all_sub_cmds[i]);
+			if(pipe(dir_output) == -1){
+				fprintf("%s\n", stderr); 
 				exit(EXIT_FAILURE);
 			}
-			waitpid(pid,NULL,0);
-			close(dir_output[0]);
 
-			
-			// if(all_sub_cmds[i+1] == NULL){
-			// 	char out_put[OUT_PUT_LEN];
+			if((pid = fork())==0){
+				char *argvs[ARGV_LEN];
+				parse(all_sub_cmds[i], argvs);
+				close(dir_output[0]);
+				if (all_sub_cmds[i+1] != NULL && dir_output[1]!=STDOUT_FILENO){
+					// printf("need connection\n");
+					dup2 (dir_output[1], STDOUT_FILENO);
+					close(dir_output[1]);
+				} else {
+					char c;
+					while ( (c = getchar()) != '\n' && c != EOF ){
+						printf("c :%c\n", c);
+					}
+				}
+				if (strstr(build_in_commands, argvs[0]) != NULL) {
+					execute_build_in_command(argvs);
+					exit(0);
+				}
+				else if (execvp(*argvs, argvs) < 0) {
+					printf("*** ERROR: exec failed\n");
+					exit(1);
+				} 
+				exit(0);
 				
-			// 	printf("miao\n");
-			// 	nbytes = read(dir_output[0], out_put, sizeof(out_put));
-			// 	printf("nbytes:%d\n", nbytes);
-			// 	printf("out_put: (%.*s)  \n", nbytes,out_put);
-			// }
-							
-			
-		} 
 
-		i++;
+			} else {
+				close(dir_output[1]);
+				if (dup2(dir_output[0], STDIN_FILENO) == -1) {
+					exit(EXIT_FAILURE);
+				}
+				close(dir_output[0]);
+				waitpid(pid,NULL,0);
+				
+				// if(all_sub_cmds[i+1] == NULL){
+				// 	char out_put[OUT_PUT_LEN];
+					
+				// 	printf("miao\n");
+				// 	nbytes = read(dir_output[0], out_put, sizeof(out_put));
+				// 	printf("nbytes:%d\n", nbytes);
+				// 	printf("out_put: (%.*s)  \n", nbytes,out_put);
+				// }				
+			} 
+
+			i++;
+		}
+	} else {
+		if (concurrent == 0) {
+			while (wait(&status) != total_pid) {
+				continue;
+			}
+		}
 	}
-	// printf("finish");
+	
+	printf("finish");
+	char c;
+	while ( (c = getchar()) != '\n' && c != EOF ){
+		printf("c :%c\n", c);
+	}
+	return total_pid;
 }
 
-void redirect(char** all_sub_cmds, int redirection) {
+pid_t redirect(char** all_sub_cmds, int concurrent) {
+	pid_t pid;
     char *command[ARGV_LEN];
     char *filename[ARGV_LEN];
-    int file_desc;
+    int file_desc, status;
     FILE *fp;
 
     parse(all_sub_cmds[0], command);
@@ -165,72 +184,104 @@ void redirect(char** all_sub_cmds, int redirection) {
     if (filename[0] == NULL || filename[1] != NULL ) {
         // invalid filename
         printf("Invalid filename.\n");
-        return;
+        return pid;
     }
-
+	// **** need to check cd and bye
     fp = fopen(filename[0], "w");
     fclose(fp);
-    file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
-    dup2(file_desc, STDOUT_FILENO);
-    if (execvp(*command, command) < 0) {
-        printf("*** ERROR: exec failed\n");
-        exit(1);
- }
-
+	if ((pid = fork()) < 0) {
+		printf("*** ERROR: forking child process failed\n");
+		exit(1);
+	}
+	else if (pid == 0) {
+		// child process
+		file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
+		dup2(file_desc, STDOUT_FILENO);
+		if (strstr(build_in_commands, command[0]) != NULL) {
+			execute_build_in_command(command);
+			exit(0);
+		}
+		else if (execvp(*command, command) < 0) {
+			printf("*** ERROR: exec failed\n");
+			exit(1);
+		}
+	}
+	else  {
+		if (concurrent == 0) {
+			while (wait(&status) != pid) {
+				continue;
+			}
+		}
+	}
+	// dup2(STDOUT_FILENO, file_desc);
+	// close(file_desc);
+	return pid;
 }
+
+
 pid_t execute(char *command, int concurrent)
 {
     pid_t pid;
-    int status, redirection, argv_num;
+    int status, argv_num;
+	char *argvs[ARGV_LEN];
 
-    if ((pid = fork()) < 0) {
-        printf("*** ERROR: forking child process failed\n");
-        exit(1);
-    }
-    else if (pid == 0) {
-        // child process
-        // sleep(3);
-        char *all_sub_cmds[COMMAND_NUM];
-        // printf("here");
-        redirection = sub_commands(command, all_sub_cmds);
-        // printf("redirection: %d, %s\n", redirection, command);
-        if (redirection == 0){
-        	char *argvs[ARGV_LEN];
-        	argv_num = parse(command, argvs);
-        	if (execvp(*argvs, argvs) < 0) {
-        		printf("sub_commands %s\n", command);
-
-            	printf("*** ERROR: exec failed\n");
-            	exit(1);
-        	} 
-        	exit(0);
-        } else if(redirection == 1){
-        	redirect(all_sub_cmds, 1);
-        } else {
-        	
-        	pipe_line(all_sub_cmds, 2);
-        }
-        exit(0);
-    }
-    else  {
-        if (concurrent == 0) {
-            while (wait(&status) != pid) {
-                continue;
-            }
-        }
-    }
+	argv_num = parse(command, argvs);
+	if (strstr(build_in_commands, argvs[0]) != NULL) {
+		execute_build_in_command(argvs);
+	}
+	else {
+		if ((pid = fork()) < 0) {
+			printf("*** ERROR: forking child process failed\n");
+			exit(1);
+		}
+		else if (pid == 0) {
+			// child process
+			if (execvp(*argvs, argvs) < 0) {
+				printf("*** ERROR: exec failed\n");
+				exit(1);
+			}
+		}
+		else  {
+			if (concurrent == 0) {
+				while (wait(&status) != pid) {
+					continue;
+				}
+			}
+		}
+	}
     return pid;
 }
 
 void execute_all_commands(char **all_commands, int status)
 {
+	printf("enter execute_all \n");
 	char *single_command[64];
 	pid_t pids[COMMAND_NUM];
-	int st[COMMAND_NUM],count=0,k=0;
+	int st[COMMAND_NUM],count=0,k=0, redirection;
+
+	char *command;
+	char *all_sub_cmds[COMMAND_NUM];
 
 	while(all_commands[k]!=NULL){
-		printf("execute %s \n", all_commands[k]);
-		pids[count++] = execute(all_commands[k], status);
+		command = all_commands[k];
+        redirection = sub_commands(command, all_sub_cmds);
+        //printf("redirection: %d, %s\n", redirection, command);
+		//sleep(1);
+        if (redirection == 0){
+			pids[count++] = execute(command, status);
+        } else if(redirection == 1){
+        	pids[count++] = redirect(all_sub_cmds, status);
+        } else {
+			pid_t pid;
+			pid = fork();
+			if(pid ==0){
+				pipe_line(all_sub_cmds, status);
+			} else {
+				pids[count++] =  pid;
+			}
+        }
+		//pids[count++] = execute(all_commands[k], status);
+		count++;
 		k++;
 	}
 
@@ -240,6 +291,10 @@ void execute_all_commands(char **all_commands, int status)
 			waitpid(pids[i], &st[i], 0);
 		}
 	printf("execute finish %d\n", getpid());
+	char c;
+	while ( (c = getchar()) != '\n' && c != EOF ){
+		printf("c :%c\n", c);
+	}
 }
 
 
@@ -304,22 +359,26 @@ int main(int argc, char *argv[]){
 		batch_mode(argv[1]);
 	} else {
 		while(1){
-			char input_line[COMMAND_LEN];
-	   		char *all_commands[COMMAND_NUM];    
-
+			char *input_line[ARGV_LEN];
+	   		char *all_commands[COMMAND_NUM];
+			   
+			printf("main: %s \n", input_line);
 	   		// read in the stdin
 	    	fgets(input_line, COMMAND_LEN, stdin); 
+			char input[ARGV_LEN];
+			strcpy(input, input_line); 
+			// printf("main: after fgets %s \n", input);
 
-	    	// check batch mode
-	    	// if(check_batch_mode(input_line)){
-	    	// 	printf("finish batch_mode\n\n\n");
-	    	// 	continue;
-	    	// }
-	    	// printf("batch finish\n");
+			char *argvs[ARGV_LEN];
+			// if(parse(input_line, argvs) == 0){
+			// 	continue;
+			// } 
+			// printf("main: after fgets %s \n", input);
 	 
 			// status = 1 means concurrent, 0 means serial
 			int status = extract_all_commands(input_line, all_commands);
 			execute_all_commands(all_commands, status);
+			// input_line[0] = NULL;
 		}
 	}
 	
