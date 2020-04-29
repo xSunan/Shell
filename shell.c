@@ -20,6 +20,12 @@ Divide the input line into multiple commands
  1 means that the commands should tun concurrently   ("&")
 
 */
+
+void raise_error() {
+	char error_message[30] = "An ERROR has occurred\n";
+	write(STDERR_FILENO, error_message, strlen(error_message));
+}
+
 int extract_all_commands(char* input, char** all_commands){
 	int concurrent=0;
 	const char delim[3]= "&;";
@@ -93,7 +99,7 @@ int parse(char *command, char **argv)
 	for(int j=i;j<ARGV_LEN;j++){
 		argv[j] = NULL;
 	}
-	printf("parse count: %d\n", i);
+	// printf("parse count: %d\n", i);
 	return i;
 }
 
@@ -151,7 +157,7 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 		}
 	}
 	
-	printf("finish");
+	// printf("finish");
 	char c;
 	// while ( (c = getchar()) != '\n' && c != EOF ){
 	// 	printf("c :%c\n", c);
@@ -214,8 +220,13 @@ pid_t execute(char *command, int concurrent)
 
 	argv_num = parse(command, argvs);
 	if (strstr(build_in_commands, argvs[0]) != NULL) {
+		if (strcmp(argvs[0],"bye")==0 && concurrent==1) {
+			char error_message[30] = "An ERROR has occurred\n";
+			write(STDERR_FILENO, error_message, strlen(error_message));
+			return -2;
+		}
 		execute_build_in_command(argvs);
-		exit(0);
+		return -1;
 	}
 	else {
 		if ((pid = fork()) < 0) {
@@ -242,7 +253,7 @@ pid_t execute(char *command, int concurrent)
 
 void execute_all_commands(char **all_commands, int status)
 {
-	printf("enter execute_all pid: %d,status: %d\n", getpid(),status);
+	// printf("enter execute_all pid: %d,status: %d\n", getpid(),status);
 	char *single_command[64];
 	pid_t pids[COMMAND_NUM];
 	int st[COMMAND_NUM],count=0,k=0, redirection;
@@ -257,14 +268,14 @@ void execute_all_commands(char **all_commands, int status)
 		//sleep(1);
         if (redirection == 0){
 			pids[count] = execute(command, status);
-			printf("sequetioal pid: %d\n", pids[count]);
+			// printf("sequetioal pid: %d\n", pids[count]);
         } else if(redirection == 1){
         	pids[count] = redirect(all_sub_cmds, status);
-        	printf("redirection pid: %d\n", pids[count]);
+        	// printf("redirection pid: %d\n", pids[count]);
 
         } else {
 			pids[count] = pipe_line(all_sub_cmds, status);
-			printf("pipeline pid: %d\n", pids[count]);
+			// printf("pipeline pid: %d\n", pids[count]);
         }
 		//pids[count++] = execute(all_commands[k], status);
 		count++;
@@ -276,7 +287,7 @@ void execute_all_commands(char **all_commands, int status)
 	for (int i = 0; i < count; i++) {
 		waitpid(pids[i], &st[i], 0);
 	}
-	printf("execute finish %d\n", getpid());
+	// printf("execute finish %d\n", getpid());
 }
 
 
@@ -298,7 +309,7 @@ void batch_mode(char * file){
 		line[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
 		// printf("line%s\n",line[i]);
 		strcpy(line[i], input); 
-		printf("[] %s\n", line[i]);
+		// printf("[] %s\n", line[i]);
 		// printf("miao%s\n",line);
 		// printf("\ni: %d\n\n\n", i);
 		
@@ -308,7 +319,6 @@ void batch_mode(char * file){
 	}
 
 	fclose(fp);
-	printf("count i: %d\n", i);
 	for(j=0;j<i;j++){
 		write(STDOUT_FILENO, ">>", 2);
 		write(STDOUT_FILENO, line[j], strlen(line[j]));
@@ -338,19 +348,37 @@ void batch_mode(char * file){
 // }
 
 int main(int argc, char *argv[]){
+	// if (argc == 2){
+	// 	// printf(argv[1]);
+	// 	// printf(argv[0]);
+	// 	batch_mode(argv[1]);
+	// } else {
+	// 	char input_line[ARGV_LEN];
+	// 	while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
+	//    		char *all_commands[COMMAND_NUM];
+			   
+	// 		// status = 1 means concurrent, 0 means serial
+	// 		int status = extract_all_commands(input_line, all_commands);
+	// 		execute_all_commands(all_commands, status);
+	// 		// input_line[0] = NULL;
+	// 	}
+	// }
 	if (argc == 2){
 		// printf(argv[1]);
 		// printf(argv[0]);
 		batch_mode(argv[1]);
 	} else {
 		char input_line[ARGV_LEN];
+		char prompt[] = "myshell> ";
+		write(STDOUT_FILENO, prompt, strlen(prompt));
 		while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
-	   		char *all_commands[COMMAND_NUM];
-			   
+			char *all_commands[COMMAND_NUM];
+			
 			// status = 1 means concurrent, 0 means serial
 			int status = extract_all_commands(input_line, all_commands);
 			execute_all_commands(all_commands, status);
 			// input_line[0] = NULL;
+			write(STDOUT_FILENO, prompt, strlen(prompt));
 		}
 	}
 	
