@@ -21,11 +21,6 @@ Divide the input line into multiple commands
 
 */
 
-void raise_error() {
-	char error_message[30] = "An ERROR has occurred\n";
-	write(STDERR_FILENO, error_message, strlen(error_message));
-}
-
 int extract_all_commands(char* input, char** all_commands){
 	int concurrent=0;
 	const char delim[3]= "&;";

@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h> 
+#include <dirent.h>
+#include <errno.h>
+
 
 void raise_error() {
 	char error_message[30] = "An ERROR has occurred\n";
@@ -40,12 +43,18 @@ void execute_cd(char **command) {
         //error;
         return;
     } else {
+        // check if the directory exists
+        DIR* dir = opendir(command[1]);
+        if (dir) {
+            /* Directory exists. */
+            closedir(dir);
+        } else if (ENOENT == errno) {
+            char error[] = "Error: the directory doesn't exists\n";
+            write(STDERR_FILENO, error, strlen(error));
+        }
         chdir(command[1]);
     }
-    // char *path = NULL;
-    // path = getcwd(NULL, 0);
-    // write(STDOUT_FILENO, path, strlen(path));
-    // write(STDOUT_FILENO, "\n", 1);
+    
 }
 
 void execute_build_in_command(char **command) {
