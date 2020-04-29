@@ -94,7 +94,7 @@ int parse(char *command, char **argv)
 	return i;
 }
 
-void pipe_line(char** all_sub_cmds, int redirection){
+pid_t pipe_line(char** all_sub_cmds, int concurrent){
 	pid_t pid;
 	int i=0, nbytes=0, argv_cnt, status;
 	int dir_output[2];
@@ -154,12 +154,14 @@ void pipe_line(char** all_sub_cmds, int redirection){
 		i++;
 	}
 	printf("finish");
+	return pid;
 }
 
-void redirect(char** all_sub_cmds, int redirection) {
+pid_t redirect(char** all_sub_cmds, int concurrent) {
+	pid_t pid;
     char *command[ARGV_LEN];
     char *filename[ARGV_LEN];
-    int file_desc;
+    int file_desc, status;
     FILE *fp;
 
     parse(all_sub_cmds[0], command);
@@ -167,65 +169,71 @@ void redirect(char** all_sub_cmds, int redirection) {
     if (filename[0] == NULL || filename[1] != NULL ) {
         // invalid filename
         printf("Invalid filename.\n");
-        return;
+        return pid;
     }
-
+	// **** need to check cd and bye
     fp = fopen(filename[0], "w");
     fclose(fp);
-    file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
-    dup2(file_desc, STDOUT_FILENO);
-	if (strstr(build_in_commands, command[0]) != NULL) {
-		execute_build_in_command(command);
-		exit(0);
+	if ((pid = fork()) < 0) {
+		printf("*** ERROR: forking child process failed\n");
+		exit(1);
 	}
-    else if (execvp(*command, command) < 0) {
-        printf("*** ERROR: exec failed\n");
-        exit(1);
- }
-
+	else if (pid == 0) {
+		// child process
+		file_desc = open(filename[0] ,O_WRONLY | O_APPEND);
+		dup2(file_desc, STDOUT_FILENO);
+		if (strstr(build_in_commands, command[0]) != NULL) {
+			execute_build_in_command(command);
+			exit(0);
+		}
+		else if (execvp(*command, command) < 0) {
+			printf("*** ERROR: exec failed\n");
+			exit(1);
+		}
+	}
+	else  {
+		if (concurrent == 0) {
+			while (wait(&status) != pid) {
+				continue;
+			}
+		}
+	}
+	// dup2(STDOUT_FILENO, file_desc);
+	// close(file_desc);
+	return pid;
 }
+
+
 pid_t execute(char *command, int concurrent)
 {
     pid_t pid;
-    int status, redirection, argv_num;
+    int status, argv_num;
+	char *argvs[ARGV_LEN];
 
-    if ((pid = fork()) < 0) {
-        printf("*** ERROR: forking child process failed\n");
-        exit(1);
-    }
-    else if (pid == 0) {
-        // child process
-        sleep(1);
-        char *all_sub_cmds[COMMAND_NUM];
-        printf("here");
-        redirection = sub_commands(command, all_sub_cmds);
-        printf("redirection: %d, %s\n", redirection, command);
-        if (redirection == 0){
-        	char *argvs[ARGV_LEN];
-        	argv_num = parse(command, argvs);
-			if (strstr(build_in_commands, argvs[0]) != NULL) {
-				execute_build_in_command(argvs);
-				exit(0);
+	argv_num = parse(command, argvs);
+	if (strstr(build_in_commands, argvs[0]) != NULL) {
+		execute_build_in_command(argvs);
+	}
+	else {
+		if ((pid = fork()) < 0) {
+			printf("*** ERROR: forking child process failed\n");
+			exit(1);
+		}
+		else if (pid == 0) {
+			// child process
+			if (execvp(*argvs, argvs) < 0) {
+				printf("*** ERROR: exec failed\n");
+				exit(1);
 			}
-        	else if (execvp(*argvs, argvs) < 0) {
-            	printf("*** ERROR: exec failed\n");
-            	exit(1);
-        	} 
-        } else if(redirection == 1){
-        	redirect(all_sub_cmds, 1);
-        } else {
-        	
-        	pipe_line(all_sub_cmds, 2);
-        }
-        // exit(0);
-    }
-    else  {
-        if (concurrent == 0) {
-            while (wait(&status) != pid) {
-                continue;
-            }
-        }
-    }
+		}
+		else  {
+			if (concurrent == 0) {
+				while (wait(&status) != pid) {
+					continue;
+				}
+			}
+		}
+	}
     return pid;
 }
 
@@ -233,11 +241,25 @@ void execute_all_commands(char **all_commands, int status)
 {
 	char *single_command[64];
 	pid_t pids[COMMAND_NUM];
-	int st[COMMAND_NUM],count=0,k=0;
+	int st[COMMAND_NUM],count=0,k=0, redirection;
+
+	char *command;
+	char *all_sub_cmds[COMMAND_NUM];
 
 	while(all_commands[k]!=NULL){
-		
-		pids[count++] = execute(all_commands[k], status);
+		command = all_commands[k];
+        redirection = sub_commands(command, all_sub_cmds);
+        //printf("redirection: %d, %s\n", redirection, command);
+		//sleep(1);
+        if (redirection == 0){
+			pids[count++] = execute(command, status);
+        } else if(redirection == 1){
+        	redirect(all_sub_cmds, status);
+        } else {
+        	pipe_line(all_sub_cmds, status);
+        }
+		//pids[count++] = execute(all_commands[k], status);
+		count++;
 		k++;
 	}
 
@@ -249,16 +271,19 @@ void execute_all_commands(char **all_commands, int status)
 }
 
 int main(){
-	char input_line[COMMAND_LEN];
- 
-    char *all_commands[COMMAND_NUM];    
 
-    fgets(input_line, COMMAND_LEN, stdin); 
- 
-	// status = 1 means concurrent, 0 means serial
-	int status = extract_all_commands(input_line, all_commands);
-	execute_all_commands(all_commands, status);
+	while (1) {
+		write(STDOUT_FILENO, "520shell> ", 10);
+		char input_line[COMMAND_LEN];
+	
+		char *all_commands[COMMAND_NUM];    
 
+		fgets(input_line, COMMAND_LEN, stdin); 
+	
+		// status = 1 means concurrent, 0 means serial
+		int status = extract_all_commands(input_line, all_commands);
+		execute_all_commands(all_commands, status);
+	}
 }
 
 

@@ -37,6 +37,10 @@ void execute_cd(char **command) {
     } else {
         chdir(command[1]);
     }
+    char *path = NULL;
+    path = getcwd(NULL, 0);
+    write(STDOUT_FILENO, path, strlen(path));
+    write(STDOUT_FILENO, "\n", 1);
 }
 
 void execute_build_in_command(char **command) {
