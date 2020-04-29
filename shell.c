@@ -142,6 +142,7 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 
 			i++;
 		}
+		exit(0);
 	} else {
 		if (concurrent == 0) {
 			while (wait(&status) != total_pid) {
@@ -214,6 +215,7 @@ pid_t execute(char *command, int concurrent)
 	argv_num = parse(command, argvs);
 	if (strstr(build_in_commands, argvs[0]) != NULL) {
 		execute_build_in_command(argvs);
+		exit(0);
 	}
 	else {
 		if ((pid = fork()) < 0) {
@@ -240,7 +242,7 @@ pid_t execute(char *command, int concurrent)
 
 void execute_all_commands(char **all_commands, int status)
 {
-	printf("enter execute_all \n");
+	printf("enter execute_all pid: %d,status: %d\n", getpid(),status);
 	char *single_command[64];
 	pid_t pids[COMMAND_NUM];
 	int st[COMMAND_NUM],count=0,k=0, redirection;
@@ -254,17 +256,15 @@ void execute_all_commands(char **all_commands, int status)
         //printf("redirection: %d, %s\n", redirection, command);
 		//sleep(1);
         if (redirection == 0){
-			pids[count++] = execute(command, status);
+			pids[count] = execute(command, status);
+			printf("sequetioal pid: %d\n", pids[count]);
         } else if(redirection == 1){
-        	pids[count++] = redirect(all_sub_cmds, status);
+        	pids[count] = redirect(all_sub_cmds, status);
+        	printf("redirection pid: %d\n", pids[count]);
+
         } else {
-			pid_t pid;
-			pid = fork();
-			if(pid ==0){
-				pipe_line(all_sub_cmds, status);
-			} else {
-				pids[count++] =  pid;
-			}
+			pids[count] = pipe_line(all_sub_cmds, status);
+			printf("pipeline pid: %d\n", pids[count]);
         }
 		//pids[count++] = execute(all_commands[k], status);
 		count++;
@@ -273,14 +273,10 @@ void execute_all_commands(char **all_commands, int status)
 
 	// if (status == 1) {
 	
-		for (int i = 0; i < count; i++) {
-			waitpid(pids[i], &st[i], 0);
-		}
+	for (int i = 0; i < count; i++) {
+		waitpid(pids[i], &st[i], 0);
+	}
 	printf("execute finish %d\n", getpid());
-	// char c;
-	// while ( (c = getchar()) != '\n' && c != EOF ){
-	// 	printf("c :%c\n", c);
-	// }
 }
 
 
@@ -310,12 +306,15 @@ void batch_mode(char * file){
 		i++;
 
 	}
+
 	fclose(fp);
+	printf("count i: %d\n", i);
 	for(j=0;j<i;j++){
 		write(STDOUT_FILENO, ">>", 2);
 		write(STDOUT_FILENO, line[j], strlen(line[j]));
 		char *all_commands[COMMAND_NUM];    
 		int status = extract_all_commands(line[j], all_commands);
+
 		execute_all_commands(all_commands, status);
 	}
 
