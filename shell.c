@@ -119,12 +119,7 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 					// printf("need connection\n");
 					dup2 (dir_output[1], STDOUT_FILENO);
 					close(dir_output[1]);
-				} else {
-					char c;
-					while ( (c = getchar()) != '\n' && c != EOF ){
-						printf("c :%c\n", c);
-					}
-				}
+				} 
 				if (strstr(build_in_commands, argvs[0]) != NULL) {
 					execute_build_in_command(argvs);
 					exit(0);
@@ -143,15 +138,6 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 				}
 				close(dir_output[0]);
 				waitpid(pid,NULL,0);
-				
-				// if(all_sub_cmds[i+1] == NULL){
-				// 	char out_put[OUT_PUT_LEN];
-					
-				// 	printf("miao\n");
-				// 	nbytes = read(dir_output[0], out_put, sizeof(out_put));
-				// 	printf("nbytes:%d\n", nbytes);
-				// 	printf("out_put: (%.*s)  \n", nbytes,out_put);
-				// }				
 			} 
 
 			i++;
@@ -166,9 +152,9 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 	
 	printf("finish");
 	char c;
-	while ( (c = getchar()) != '\n' && c != EOF ){
-		printf("c :%c\n", c);
-	}
+	// while ( (c = getchar()) != '\n' && c != EOF ){
+	// 	printf("c :%c\n", c);
+	// }
 	return total_pid;
 }
 
@@ -291,10 +277,10 @@ void execute_all_commands(char **all_commands, int status)
 			waitpid(pids[i], &st[i], 0);
 		}
 	printf("execute finish %d\n", getpid());
-	char c;
-	while ( (c = getchar()) != '\n' && c != EOF ){
-		printf("c :%c\n", c);
-	}
+	// char c;
+	// while ( (c = getchar()) != '\n' && c != EOF ){
+	// 	printf("c :%c\n", c);
+	// }
 }
 
 
@@ -358,23 +344,10 @@ int main(int argc, char *argv[]){
 		// printf(argv[0]);
 		batch_mode(argv[1]);
 	} else {
-		while(1){
-			char *input_line[ARGV_LEN];
+		char input_line[ARGV_LEN];
+		while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
 	   		char *all_commands[COMMAND_NUM];
 			   
-			printf("main: %s \n", input_line);
-	   		// read in the stdin
-	    	fgets(input_line, COMMAND_LEN, stdin); 
-			char input[ARGV_LEN];
-			strcpy(input, input_line); 
-			// printf("main: after fgets %s \n", input);
-
-			char *argvs[ARGV_LEN];
-			// if(parse(input_line, argvs) == 0){
-			// 	continue;
-			// } 
-			// printf("main: after fgets %s \n", input);
-	 
 			// status = 1 means concurrent, 0 means serial
 			int status = extract_all_commands(input_line, all_commands);
 			execute_all_commands(all_commands, status);
