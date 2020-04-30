@@ -1,1 +1,0 @@
-pwd; ls -la /bin | grep 'ch' > results/fileout
