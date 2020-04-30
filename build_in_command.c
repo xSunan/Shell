@@ -13,11 +13,42 @@ void raise_error() {
 }
 
 void execute_echo(char **command) {
-    int i = 1;
-    while (command[i] != NULL) {
-        write(STDOUT_FILENO, command[i], strlen(command[i]));
-        write(STDOUT_FILENO, " ", 1);
-        i++;
+    if (command[1] == NULL) {
+        raise_error();
+        exit(0);
+    }
+    int count = 0, i = 1;
+    char *token, *delimit = " ";
+
+    if (strchr(command[i], '\"') != NULL) {
+        delimit = "\"";
+    }
+    else if (strchr(command[i], '\'') != NULL) {
+        delimit = "\'";
+    }
+    else {
+        delimit = " ";
+    }
+
+    if (strcmp(delimit, " ") == 0) {
+        token = strtok(command[i], " ");
+        write(STDOUT_FILENO, token, strlen(token));
+    }
+    else {
+        while (command[i] != NULL) {
+            if (strchr(command[i], delimit) != NULL) {
+                count++;
+            }
+
+            token = strtok(command[i], delimit);
+            write(STDOUT_FILENO, token, strlen(token));
+            write(STDOUT_FILENO, " ", 1);
+
+            if (count == 2) {
+                break;
+            }
+            i++;
+        }
     }
     write(STDOUT_FILENO, "\n", 1);
 }

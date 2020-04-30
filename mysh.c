@@ -129,12 +129,11 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 					dup2 (dir_output[1], STDOUT_FILENO);
 					close(dir_output[1]);
 				} 
-				if (strstr(build_in_commands, argvs[0]) != NULL) {
-					execute_build_in_command(argvs);
-					exit(0);
-				}
-				else if (execvp(*argvs, argvs) < 0) {
-					printf("*** ERROR: exec failed\n");
+				// if (strstr(build_in_commands, argvs[0]) != NULL) {
+				// 	execute_build_in_command(argvs);
+				// 	exit(0);
+				// }
+				if (execvp(*argvs, argvs) < 0) {
 					exit(1);
 				} 
 				exit(0);
@@ -274,9 +273,11 @@ int execute_all_commands(char **all_commands, int status)
 				raise_error();
 				return 0;
 			}
+			k++;
 		}
+		
 	}
-	
+	k=0;
 	while(all_commands[k]!=NULL){
 		command = all_commands[k];
 		if(strlen(command) >= 64){
@@ -310,7 +311,7 @@ int execute_all_commands(char **all_commands, int status)
 		waitpid(pids[i], &st[i], 0);
 	}
 	return 0;
-	// printf("execute all command finish %d\n", getpid());
+	printf("execute all command finish %d\n", getpid());
 }
 
 
