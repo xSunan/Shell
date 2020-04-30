@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 #include "build_in_command.c"
 
-#define COMMAND_LEN 50
+#define COMMAND_LEN 1024
 #define ARGV_LEN 1024
-#define COMMAND_NUM 20
-#define OUT_PUT_LEN 4090
+#define COMMAND_NUM 50
 
 char *build_in_commands = "cd echo pwd bye";
 
@@ -71,7 +71,7 @@ int sub_commands(char* command, char** all_sub_cmds){
 	char *sub_cmd = strtok(command, delim_pipe);   	
 	int i=0;
 	while(sub_cmd != NULL && strlen(sub_cmd)>0) {
-		all_sub_cmds[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
+		all_sub_cmds[i] = (char *) malloc(sizeof(char)*ARGV_LEN);
 		all_sub_cmds[i++] =sub_cmd;
 	  	sub_cmd = strtok(NULL, delim_pipe);
 	}
@@ -274,7 +274,7 @@ int execute_all_commands(char **all_commands, int status)
 		}
 		// printf("command: %s\n",command);
         redirection = sub_commands(command, all_sub_cmds);
-        // printf("redirection: %d, %s\n", redirection, command);
+        printf("redirection: %d, %s\n", redirection, command);
 		//sleep(1);
         if (redirection == 0){
 			pids[count] = execute(command, status);
@@ -303,7 +303,6 @@ int execute_all_commands(char **all_commands, int status)
 
 
 
-
 int batch_mode(char * file){
 	if( access( file, F_OK ) == -1 ){
 		raise_error();
@@ -324,12 +323,7 @@ int batch_mode(char * file){
 		line[i] = (char *) malloc(sizeof(char)*ARGV_LEN);
 		// printf("line%s\n",line[i]);
 		strcpy(line[i], input); 
-		// printf("batchmode %s\n", line[i]);
-		// printf("[] %s\n", line[i]);
-		// printf("miao%s\n",line);
-		// printf("\ni: %d\n\n\n", i);
 		
-		// printf("\ni: %d\n\n\n", i);
 		i++;
 
 	}
@@ -351,37 +345,8 @@ int batch_mode(char * file){
 }
 
 
-/*
- Check if the the command is to enter batch mode
- if it is, then direct to the batch mode
-*/
-// int check_batch_mode(char * input_line){
-// 	char *argvs[ARGV_LEN];
-// 	int num = parse(input_line, argvs);
-// 	if(num==2 && strcmp(argvs[0], "myshel")==0) {
-// 		batch_mode(argvs[1]);
-// 		return 1;
-// 	} else {
-// 		return 0;
-// 	}
-// }
-
 int main(int argc, char *argv[]){
-	// if (argc == 2){
-	// 	// printf(argv[1]);
-	// 	// printf(argv[0]);
-	// 	batch_mode(argv[1]);
-	// } else {
-	// 	char input_line[ARGV_LEN];
-	// 	while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
-	//    		char *all_commands[COMMAND_NUM];
-			   
-	// 		// status = 1 means concurrent, 0 means serial
-	// 		int status = extract_all_commands(input_line, all_commands);
-	// 		execute_all_commands(all_commands, status);
-	// 		// input_line[0] = NULL;
-	// 	}
-	// }
+	
 	if(argc>2){
 		raise_error();
 		return 1;
@@ -392,15 +357,12 @@ int main(int argc, char *argv[]){
 		return status;
 	} else {
 		char input_line[ARGV_LEN];
-		char prompt[] = "myshell> ";
+		char prompt[] = "520shell> ";
 		write(STDOUT_FILENO, prompt, strlen(prompt));
 		int return_code;
-		while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
+		while(fgets(input_line, ARGV_LEN, stdin)!=NULL){
 			// printf("len of line %d\n",strlen(input_line));
-			if(strlen(input_line) >= 64){
-				raise_error();
-				continue;
-			}
+			
 			char *all_commands[COMMAND_NUM];
 			
 			// status = 1 means concurrent, 0 means serial
