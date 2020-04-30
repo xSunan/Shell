@@ -24,8 +24,11 @@ Divide the input line into multiple commands
 int extract_all_commands(char* input, char** all_commands){
 	int concurrent=0;
 	const char delim[3]= "&;";
-
-	if(strchr(input, '&') != NULL){
+	if (strchr(input, '&') != NULL && strchr(input, ';') != NULL) {
+		raise_error();
+		all_commands[0] = NULL;
+		return 0;
+	} else if(strchr(input, '&') != NULL){
 		concurrent = 1;
 	} else if (strchr(input, ';') != NULL){
 		concurrent = 0;	
@@ -60,7 +63,11 @@ int sub_commands(char* command, char** all_sub_cmds){
 	const char delim_pipe[] = ">|";
 	int redirection;
 
-	if(strchr(command, '>') != NULL){
+	if (strchr(command, '>') != NULL && strchr(command, '|') != NULL){
+		raise_error();
+		all_sub_cmds[0] = NULL;
+		return 0;
+	}else if(strchr(command, '>') != NULL){
 		redirection = 1;
 	} else if (strchr(command, '|') != NULL){
 		redirection = 2;	
@@ -101,7 +108,7 @@ int parse(char *command, char **argv)
 
 pid_t pipe_line(char** all_sub_cmds, int concurrent){
 	pid_t pid, total_pid;
-	int i=0, nbytes=0, argv_cnt, status;
+	int i=0, status;
 	int dir_output[2];
 	total_pid = fork();
 
@@ -154,10 +161,6 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 	}
 	
 	// printf("finish");
-	char c;
-	// while ( (c = getchar()) != '\n' && c != EOF ){
-	// 	printf("c :%c\n", c);
-	// }
 	return total_pid;
 }
 
@@ -175,14 +178,14 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
         printf("Invalid filename.\n");
 		printf("%s\n", filename[0]);
 		printf("%s\n", filename[1]);
-        return pid;
+        return -1;
     }
 	// **** need to check cd and bye
     // fp = fopen(filename[0], "w");
     // fclose(fp);
 	if (creat(filename[0], 0777) < 0) {
 		raise_error();
-		return pid;
+		return -1;
 	}
 
 	if ((pid = fork()) < 0) {
@@ -198,7 +201,7 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
 			exit(0);
 		}
 		else if (execvp(*command, command) < 0) {
-			printf("*** ERROR: exec failed\n");
+			// printf("*** ERROR: exec failed\n");
 			exit(1);
 		}
 	}
@@ -258,13 +261,22 @@ pid_t execute(char *command, int concurrent)
 int execute_all_commands(char **all_commands, int status)
 {
 	// printf("enter execute_all pid: %d,status: %d\n", getpid(),status);
-	char *single_command[64];
 	pid_t pids[COMMAND_NUM];
 	int st[COMMAND_NUM],count=0,k=0, redirection;
 
 	char *command;
 	char *all_sub_cmds[COMMAND_NUM];
 
+	// check if the build in commands have parallel mode, raise error
+	if (status == 1){
+		while(all_commands[k]!=NULL){
+			if(strstr(build_in_commands, all_commands[k]) != NULL) {
+				raise_error();
+				return 0;
+			}
+		}
+	}
+	
 	while(all_commands[k]!=NULL){
 		command = all_commands[k];
 		if(strlen(command) >= 64){
@@ -274,10 +286,10 @@ int execute_all_commands(char **all_commands, int status)
 		}
 		// printf("command: %s\n",command);
         redirection = sub_commands(command, all_sub_cmds);
-        printf("redirection: %d, %s\n", redirection, command);
+        // printf("redirection: %d, %s\n", redirection, command);
 		//sleep(1);
         if (redirection == 0){
-			pids[count] = execute(command, status);
+			pids[count] = execute(all_sub_cmds[0], status);
 			// printf("sequetioal pid: %d\n", pids[count]);
         } else if(redirection == 1){
         	pids[count] = redirect(all_sub_cmds, status);

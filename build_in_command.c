@@ -38,7 +38,6 @@ void execute_bye(char **command) {
 }
 
 void execute_cd(char **command) {
-    int i = 1;
     if (command[1] == NULL) {
         //  "cd  " back to the home path
         char *HOME = getenv("HOME");
