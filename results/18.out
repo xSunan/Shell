@@ -1,2 +1,0 @@
-pwd; ls -la /bin | grep 'ch' > results/fileout
-/Users/sunanxiang/Desktop/os/hws/Shell

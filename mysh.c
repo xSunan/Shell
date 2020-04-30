@@ -166,18 +166,25 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
     char *command[ARGV_LEN];
     char *filename[ARGV_LEN];
     int file_desc, status;
-    FILE *fp;
+    // FILE *fp;
 
     parse(all_sub_cmds[0], command);
     parse(all_sub_cmds[1], filename);
     if (filename[0] == NULL || filename[1] != NULL ) {
         // invalid filename
         printf("Invalid filename.\n");
+		printf("%s\n", filename[0]);
+		printf("%s\n", filename[1]);
         return pid;
     }
 	// **** need to check cd and bye
-    fp = fopen(filename[0], "w");
-    fclose(fp);
+    // fp = fopen(filename[0], "w");
+    // fclose(fp);
+	if (creat(filename[0], 0777) < 0) {
+		raise_error();
+		return pid;
+	}
+
 	if ((pid = fork()) < 0) {
 		printf("*** ERROR: forking child process failed\n");
 		exit(1);
@@ -260,8 +267,14 @@ int execute_all_commands(char **all_commands, int status)
 
 	while(all_commands[k]!=NULL){
 		command = all_commands[k];
+		if(strlen(command) >= 64){
+			raise_error();
+			k++;
+			continue;
+		}
+		// printf("command: %s\n",command);
         redirection = sub_commands(command, all_sub_cmds);
-        //printf("redirection: %d, %s\n", redirection, command);
+        // printf("redirection: %d, %s\n", redirection, command);
 		//sleep(1);
         if (redirection == 0){
 			pids[count] = execute(command, status);
@@ -327,10 +340,6 @@ int batch_mode(char * file){
 		// printf("len of line %d\n",strlen(line[j]));
 		
 		write(STDOUT_FILENO, line[j], strlen(line[j]));
-		if(strlen(line[j]) >= 64){
-			raise_error();
-			continue;
-		}
 		// write(STDOUT_FILENO, "\n", 1);
 		char *all_commands[COMMAND_NUM];    
 		int status = extract_all_commands(line[j], all_commands);

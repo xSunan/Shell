@@ -8,7 +8,7 @@
 
 
 void raise_error() {
-	char error_message[30] = "An error has occurred\n";
+	char error_message[30] = "An ERROR has occurred\n";
 	write(STDERR_FILENO, error_message, strlen(error_message));
 }
 
@@ -75,7 +75,6 @@ void execute_build_in_command(char **command) {
         execute_bye(command);
     }
     else{
-        printf("invalid input");
         return;
     }
 }
