@@ -1,2 +1,0 @@
-pwd; ls -la /bin | grep 'ch' > results/fileout
-/Users/tiandaliu/Documents/uchicago-courses/operating-system/projects/Shell

@@ -269,6 +269,7 @@ int execute_all_commands(char **all_commands, int status)
 		command = all_commands[k];
 		if(strlen(command) >= 64){
 			raise_error();
+			k++;
 			continue;
 		}
 		// printf("command: %s\n",command);
