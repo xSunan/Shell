@@ -182,7 +182,7 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
     // fclose(fp);
 	if (creat(filename[0], 0777) < 0) {
 		raise_error();
-		exit(0);
+		return pid;
 	}
 
 	if ((pid = fork()) < 0) {
