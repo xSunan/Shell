@@ -82,7 +82,7 @@ int sub_commands(char* command, char** all_sub_cmds){
 
 int parse(char *command, char **argv)
 {
-	const char delim[] = " \n";
+	const char delim[] = " \n\t";
 	char *arg = strtok(command, delim);   	
 	int i=0;
 
@@ -221,8 +221,7 @@ pid_t execute(char *command, int concurrent)
 	}
 	if (strstr(build_in_commands, argvs[0]) != NULL) {
 		if (strcmp(argvs[0],"bye")==0 && concurrent==1) {
-			char error_message[30] = "An ERROR has occurred\n";
-			write(STDERR_FILENO, error_message, strlen(error_message));
+			raise_error();
 			return -2;
 		}
 		execute_build_in_command(argvs);
@@ -230,13 +229,11 @@ pid_t execute(char *command, int concurrent)
 	}
 	else {
 		if ((pid = fork()) < 0) {
-			printf("*** ERROR: forking child process failed\n");
 			exit(1);
 		}
 		else if (pid == 0) {
 			// child process
 			if (execvp(*argvs, argvs) < 0) {
-				printf("*** ERROR: exec failed\n");
 				exit(1);
 			}
 		}
@@ -311,7 +308,7 @@ int batch_mode(char * file){
 	int i=0, j=0;
 	while(fgets(input, sizeof(input), fp) != NULL){
 		
-		line[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
+		line[i] = (char *) malloc(sizeof(char)*ARGV_LEN);
 		// printf("line%s\n",line[i]);
 		strcpy(line[i], input); 
 		// printf("batchmode %s\n", line[i]);
@@ -328,11 +325,12 @@ int batch_mode(char * file){
 	for(j=0;j<i;j++){
 		// write(STDOUT_FILENO, ">>", 2);
 		// printf("len of line %d\n",strlen(line[j]));
+		
+		write(STDOUT_FILENO, line[j], strlen(line[j]));
 		if(strlen(line[j]) >= 64){
 			raise_error();
 			continue;
 		}
-		write(STDOUT_FILENO, line[j], strlen(line[j]));
 		// write(STDOUT_FILENO, "\n", 1);
 		char *all_commands[COMMAND_NUM];    
 		int status = extract_all_commands(line[j], all_commands);
