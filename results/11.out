@@ -1,45 +1,45 @@
 ls        -la        /bin   
-total 4888
-drwxr-xr-x@ 38 root  wheel     1216 Sep 29  2019 .
-drwxr-xr-x  22 root  admin      704 Oct 12  2019 ..
--rwxr-xr-x   1 root  wheel    35840 Sep 29  2019 [
--r-xr-xr-x   1 root  wheel   623344 Sep 29  2019 bash
--rwxr-xr-x   1 root  wheel    36768 Sep 29  2019 cat
--rwxr-xr-x   1 root  wheel    47296 Sep 29  2019 chmod
--rwxr-xr-x   1 root  wheel    42272 Sep 29  2019 cp
--rwxr-xr-x   1 root  wheel   528688 Sep 29  2019 csh
--rwxr-xr-x   1 root  wheel   110848 Sep 29  2019 dash
--rwxr-xr-x   1 root  wheel    41728 Sep 29  2019 date
--rwxr-xr-x   1 root  wheel    45168 Sep 29  2019 dd
--rwxr-xr-x   1 root  wheel    36512 Sep 29  2019 df
--rwxr-xr-x   1 root  wheel    31264 Sep 29  2019 echo
--rwxr-xr-x   1 root  wheel    67200 Sep 29  2019 ed
--rwxr-xr-x   1 root  wheel    36240 Sep 29  2019 expr
--rwxr-xr-x   1 root  wheel    31408 Sep 29  2019 hostname
--rwxr-xr-x   1 root  wheel    31808 Sep 29  2019 kill
--r-xr-xr-x   1 root  wheel  1300128 Sep 29  2019 ksh
--rwxr-xr-x   1 root  wheel   138432 Sep 29  2019 launchctl
--rwxr-xr-x   1 root  wheel    32160 Sep 29  2019 link
--rwxr-xr-x   1 root  wheel    32160 Sep 29  2019 ln
--rwxr-xr-x   1 root  wheel    51888 Sep 29  2019 ls
--rwxr-xr-x   1 root  wheel    31696 Sep 29  2019 mkdir
--rwxr-xr-x   1 root  wheel    37472 Sep 29  2019 mv
--rwxr-xr-x   1 root  wheel   124464 Sep 29  2019 pax
--rwsr-xr-x   1 root  wheel    64416 Sep 29  2019 ps
--rwxr-xr-x   1 root  wheel    31392 Sep 29  2019 pwd
--rwxr-xr-x   1 root  wheel    37296 Sep 29  2019 rm
--rwxr-xr-x   1 root  wheel    31296 Sep 29  2019 rmdir
--rwxr-xr-x   1 root  wheel    31440 Sep 29  2019 sh
--rwxr-xr-x   1 root  wheel    31200 Sep 29  2019 sleep
--rwxr-xr-x   1 root  wheel    45312 Sep 29  2019 stty
--rwxr-xr-x   1 root  wheel    30976 Sep 29  2019 sync
--rwxr-xr-x   1 root  wheel   528688 Sep 29  2019 tcsh
--rwxr-xr-x   1 root  wheel    35840 Sep 29  2019 test
--rwxr-xr-x   1 root  wheel    37296 Sep 29  2019 unlink
--rwxr-xr-x   1 root  wheel    31280 Sep 29  2019 wait4path
--rwxr-xr-x   1 root  wheel   633328 Sep 29  2019 zsh
+total 4848
+drwxr-xr-x@ 38 root  wheel     1216 Apr  9 12:05 .
+drwxr-xr-x  22 root  admin      704 Apr  9 12:06 ..
+-rwxr-xr-x   1 root  wheel    35824 Apr  6 15:39 [
+-r-xr-xr-x   1 root  wheel   623472 Apr  6 15:39 bash
+-rwxr-xr-x   1 root  wheel    36768 Apr  6 15:39 cat
+-rwxr-xr-x   1 root  wheel    47264 Apr  6 15:39 chmod
+-rwxr-xr-x   1 root  wheel    42272 Apr  6 15:39 cp
+-rwxr-xr-x   1 root  wheel   529424 Apr  6 15:39 csh
+-rwxr-xr-x   1 root  wheel   110848 Apr  6 15:39 dash
+-rwxr-xr-x   1 root  wheel    41872 Apr  6 15:39 date
+-rwxr-xr-x   1 root  wheel    45120 Apr  6 15:39 dd
+-rwxr-xr-x   1 root  wheel    36512 Apr  6 15:39 df
+-rwxr-xr-x   1 root  wheel    31264 Apr  6 15:39 echo
+-rwxr-xr-x   1 root  wheel    67200 Apr  6 15:39 ed
+-rwxr-xr-x   1 root  wheel    36240 Apr  6 15:39 expr
+-rwxr-xr-x   1 root  wheel    31408 Apr  6 15:39 hostname
+-rwxr-xr-x   1 root  wheel    31808 Apr  6 15:39 kill
+-r-xr-xr-x   1 root  wheel  1300256 Apr  6 15:39 ksh
+-rwxr-xr-x   1 root  wheel   138432 Apr  6 15:39 launchctl
+-rwxr-xr-x   1 root  wheel    32176 Apr  6 15:39 link
+-rwxr-xr-x   1 root  wheel    32176 Apr  6 15:39 ln
+-rwxr-xr-x   1 root  wheel    51888 Apr  6 15:39 ls
+-rwxr-xr-x   1 root  wheel    31696 Apr  6 15:39 mkdir
+-rwxr-xr-x   1 root  wheel    37472 Apr  6 15:39 mv
+-rwxr-xr-x   1 root  wheel   124464 Apr  6 15:39 pax
+-rwsr-xr-x   1 root  wheel    64416 Apr  6 15:39 ps
+-rwxr-xr-x   1 root  wheel    31392 Apr  6 15:39 pwd
+-rwxr-xr-x   1 root  wheel    37296 Apr  6 15:39 rm
+-rwxr-xr-x   1 root  wheel    31296 Apr  6 15:39 rmdir
+-rwxr-xr-x   1 root  wheel    31440 Apr  6 15:39 sh
+-rwxr-xr-x   1 root  wheel    31328 Apr  6 15:39 sleep
+-rwxr-xr-x   1 root  wheel    45312 Apr  6 15:39 stty
+-rwxr-xr-x   1 root  wheel    30976 Apr  6 15:39 sync
+-rwxr-xr-x   1 root  wheel   529424 Apr  6 15:39 tcsh
+-rwxr-xr-x   1 root  wheel    35824 Apr  6 15:39 test
+-rwxr-xr-x   1 root  wheel    37296 Apr  6 15:39 unlink
+-rwxr-xr-x   1 root  wheel    31280 Apr  6 15:39 wait4path
+-rwxr-xr-x   1 root  wheel   637632 Apr  6 15:39 zsh
   pwd   
-/Users/sunanxiang/Desktop/os/hws/Shell
+/Users/tiandaliu/Documents/uchicago-courses/operating-system/projects/Shell
 	cal	
      April 2020       
 Su Mo Tu We Th Fr Sa  

@@ -1,1 +1,1 @@
-pwd; ls -la /bin | grep 'ch' > results/fileout
+./para 2 results/fileout & ./para 1 results/fileout & ./para 0 results/fileout
