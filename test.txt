@@ -1,3 +1,2 @@
-ls | grep .pdf
-ls | grep .c
+cd 
 pwd

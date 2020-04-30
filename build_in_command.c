@@ -8,7 +8,7 @@
 
 
 void raise_error() {
-	char error_message[30] = "An ERROR has occurred\n";
+	char error_message[30] = "An error has occurred\n";
 	write(STDERR_FILENO, error_message, strlen(error_message));
 }
 
@@ -23,6 +23,10 @@ void execute_echo(char **command) {
 }
 
 void execute_pwd(char **command) {
+    if(command[1] != NULL){
+        raise_error();
+        exit(0);
+    }
     char *path = NULL;
     path = getcwd(NULL, 0);
     write(STDOUT_FILENO, path, strlen(path));

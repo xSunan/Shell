@@ -6,7 +6,7 @@
 #include "build_in_command.c"
 
 #define COMMAND_LEN 50
-#define ARGV_LEN 150
+#define ARGV_LEN 1024
 #define COMMAND_NUM 20
 #define OUT_PUT_LEN 4090
 
@@ -41,6 +41,7 @@ int extract_all_commands(char* input, char** all_commands){
 	  	command = strtok(NULL, delim);
 	}
 	all_commands[i] = NULL;
+	// printf("extract_all finish\n");
 	return concurrent;
 }
 
@@ -108,7 +109,7 @@ pid_t pipe_line(char** all_sub_cmds, int concurrent){
 		while(all_sub_cmds[i] != NULL){
 			// printf("inside: cmd %s \n", all_sub_cmds[i]);
 			if(pipe(dir_output) == -1){
-				fprintf("%s\n", stderr); 
+				// fprintf("%s\n", stderr); 
 				exit(EXIT_FAILURE);
 			}
 
@@ -214,6 +215,10 @@ pid_t execute(char *command, int concurrent)
 	char *argvs[ARGV_LEN];
 
 	argv_num = parse(command, argvs);
+	// printf("enter execute c%sc %d\n", command, argv_num);
+	if(argv_num == 0){
+		return -1;
+	}
 	if (strstr(build_in_commands, argvs[0]) != NULL) {
 		if (strcmp(argvs[0],"bye")==0 && concurrent==1) {
 			char error_message[30] = "An ERROR has occurred\n";
@@ -246,7 +251,7 @@ pid_t execute(char *command, int concurrent)
     return pid;
 }
 
-void execute_all_commands(char **all_commands, int status)
+int execute_all_commands(char **all_commands, int status)
 {
 	// printf("enter execute_all pid: %d,status: %d\n", getpid(),status);
 	char *single_command[64];
@@ -282,17 +287,22 @@ void execute_all_commands(char **all_commands, int status)
 	for (int i = 0; i < count; i++) {
 		waitpid(pids[i], &st[i], 0);
 	}
-	// printf("execute finish %d\n", getpid());
+	return 0;
+	// printf("execute all command finish %d\n", getpid());
 }
 
 
 
 
-void batch_mode(char * file){
+int batch_mode(char * file){
+	if( access( file, F_OK ) == -1 ){
+		raise_error();
+		return 1;
+	}
 	FILE *fp = fopen(file,"r");
 
 	if (fp == NULL) {
-		perror("Unable to open file!");
+		raise_error();
 		exit(1);
 	}
 
@@ -300,10 +310,11 @@ void batch_mode(char * file){
 	char input[ARGV_LEN];
 	int i=0, j=0;
 	while(fgets(input, sizeof(input), fp) != NULL){
-		// printf("batchmode here\n");
+		
 		line[i] = (char *) malloc(sizeof(char)*COMMAND_LEN);
 		// printf("line%s\n",line[i]);
 		strcpy(line[i], input); 
+		// printf("batchmode %s\n", line[i]);
 		// printf("[] %s\n", line[i]);
 		// printf("miao%s\n",line);
 		// printf("\ni: %d\n\n\n", i);
@@ -312,17 +323,23 @@ void batch_mode(char * file){
 		i++;
 
 	}
-
+	// printf("batch line number: %d\n", i);
 	fclose(fp);
 	for(j=0;j<i;j++){
-		write(STDOUT_FILENO, ">>", 2);
+		// write(STDOUT_FILENO, ">>", 2);
+		// printf("len of line %d\n",strlen(line[j]));
+		if(strlen(line[j]) >= 64){
+			raise_error();
+			continue;
+		}
 		write(STDOUT_FILENO, line[j], strlen(line[j]));
+		// write(STDOUT_FILENO, "\n", 1);
 		char *all_commands[COMMAND_NUM];    
 		int status = extract_all_commands(line[j], all_commands);
 
 		execute_all_commands(all_commands, status);
 	}
-
+	return 0;
 	
 }
 
@@ -358,23 +375,34 @@ int main(int argc, char *argv[]){
 	// 		// input_line[0] = NULL;
 	// 	}
 	// }
-	if (argc == 2){
+	if(argc>2){
+		raise_error();
+		return 1;
+	} else if (argc == 2){
 		// printf(argv[1]);
 		// printf(argv[0]);
-		batch_mode(argv[1]);
+		int status = batch_mode(argv[1]);
+		return status;
 	} else {
 		char input_line[ARGV_LEN];
 		char prompt[] = "myshell> ";
 		write(STDOUT_FILENO, prompt, strlen(prompt));
+		int return_code;
 		while(fgets(input_line, COMMAND_LEN, stdin)!=NULL){
+			// printf("len of line %d\n",strlen(input_line));
+			if(strlen(input_line) >= 64){
+				raise_error();
+				continue;
+			}
 			char *all_commands[COMMAND_NUM];
 			
 			// status = 1 means concurrent, 0 means serial
 			int status = extract_all_commands(input_line, all_commands);
-			execute_all_commands(all_commands, status);
+			return_code =  execute_all_commands(all_commands, status) | return_code;
 			// input_line[0] = NULL;
 			write(STDOUT_FILENO, prompt, strlen(prompt));
 		}
+		return return_code;
 	}
 	
 	
