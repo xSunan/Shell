@@ -174,9 +174,7 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
     parse(all_sub_cmds[1], filename);
     if (filename[0] == NULL || filename[1] != NULL ) {
         // invalid filename
-        printf("Invalid filename.\n");
-		printf("%s\n", filename[0]);
-		printf("%s\n", filename[1]);
+        raise_error();
         return -1;
     }
 	// **** need to check cd and bye
@@ -188,8 +186,8 @@ pid_t redirect(char** all_sub_cmds, int concurrent) {
 	}
 
 	if ((pid = fork()) < 0) {
-		printf("*** ERROR: forking child process failed\n");
-		exit(1);
+		raise_error();
+		return -1;
 	}
 	else if (pid == 0) {
 		// child process
@@ -231,7 +229,7 @@ pid_t execute(char *command, int concurrent)
 	if (strstr(build_in_commands, argvs[0]) != NULL) {
 		if (strcmp(argvs[0],"bye")==0 && concurrent==1) {
 			raise_error();
-			return -2;
+			return -1;
 		}
 		execute_build_in_command(argvs);
 		return -1;
@@ -280,7 +278,7 @@ int execute_all_commands(char **all_commands, int status)
 	k=0;
 	while(all_commands[k]!=NULL){
 		command = all_commands[k];
-		if(strlen(command) >= 64){
+		if(strlen(command) >= 66){
 			raise_error();
 			k++;
 			continue;
@@ -311,7 +309,6 @@ int execute_all_commands(char **all_commands, int status)
 		waitpid(pids[i], &st[i], 0);
 	}
 	return 0;
-	printf("execute all command finish %d\n", getpid());
 }
 
 
@@ -372,7 +369,6 @@ int main(int argc, char *argv[]){
 		char input_line[ARGV_LEN];
 		char prompt[] = "520shell> ";
 		write(STDOUT_FILENO, prompt, strlen(prompt));
-		int return_code;
 		while(fgets(input_line, ARGV_LEN, stdin)!=NULL){
 			// printf("len of line %d\n",strlen(input_line));
 			
@@ -380,11 +376,10 @@ int main(int argc, char *argv[]){
 			
 			// status = 1 means concurrent, 0 means serial
 			int status = extract_all_commands(input_line, all_commands);
-			return_code =  execute_all_commands(all_commands, status) | return_code;
+			execute_all_commands(all_commands, status);
 			// input_line[0] = NULL;
 			write(STDOUT_FILENO, prompt, strlen(prompt));
 		}
-		return return_code;
 	}
 	
 	

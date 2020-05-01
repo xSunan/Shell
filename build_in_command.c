@@ -15,7 +15,7 @@ void raise_error() {
 void execute_echo(char **command) {
     if (command[1] == NULL) {
         raise_error();
-        exit(0);
+        return;
     }
     int count = 0, i = 1;
     char *token, *delimit = " ";
@@ -36,17 +36,27 @@ void execute_echo(char **command) {
     }
     else {
         while (command[i] != NULL) {
-            if (strchr(command[i], delimit) != NULL) {
-                count++;
+            // printf("here\n");
+            int len = strlen( command[i] );
+            for (int k = 0; k < len; k++){
+                if(command[i][k] == delimit[0])
+                    count++;
             }
-
-            token = strtok(command[i], delimit);
-            write(STDOUT_FILENO, token, strlen(token));
-            write(STDOUT_FILENO, " ", 1);
-
-            if (count == 2) {
+            if (count > 2) {
                 break;
             }
+            // if (strchr(command[i], delimit[0]) != NULL) {
+            //     count++;
+            // }
+
+            token = strtok(command[i], delimit);
+            if(token!=NULL) {
+                write(STDOUT_FILENO, token, strlen(token));
+                write(STDOUT_FILENO, " ", 1);
+            }
+            
+
+            
             i++;
         }
     }
@@ -56,7 +66,7 @@ void execute_echo(char **command) {
 void execute_pwd(char **command) {
     if(command[1] != NULL){
         raise_error();
-        exit(0);
+        return;
     }
     char *path = NULL;
     path = getcwd(NULL, 0);
@@ -65,6 +75,10 @@ void execute_pwd(char **command) {
 }
 
 void execute_bye(char **command) {
+    if (command[1] != NULL){
+        raise_error();
+        return;
+    }
     exit(0);
 }
 
@@ -74,7 +88,7 @@ void execute_cd(char **command) {
         char *HOME = getenv("HOME");
         chdir(HOME);
     } else if (command[2] != NULL) {
-        //error;
+        raise_error();
         return;
     } else {
         // check if the directory exists
@@ -83,8 +97,8 @@ void execute_cd(char **command) {
             /* Directory exists. */
             closedir(dir);
         } else if (ENOENT == errno) {
-            char error[] = "Error: the directory doesn't exists\n";
-            write(STDERR_FILENO, error, strlen(error));
+            raise_error();
+            return;
         }
         chdir(command[1]);
     }
@@ -105,6 +119,7 @@ void execute_build_in_command(char **command) {
         execute_bye(command);
     }
     else{
+        raise_error();
         return;
     }
 }
