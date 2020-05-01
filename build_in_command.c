@@ -36,7 +36,6 @@ void execute_echo(char **command) {
     }
     else {
         while (command[i] != NULL) {
-            // printf("here\n");
             int len = strlen( command[i] );
             for (int k = 0; k < len; k++){
                 if(command[i][k] == delimit[0])
@@ -45,18 +44,12 @@ void execute_echo(char **command) {
             if (count > 2) {
                 break;
             }
-            // if (strchr(command[i], delimit[0]) != NULL) {
-            //     count++;
-            // }
 
             token = strtok(command[i], delimit);
             if(token!=NULL) {
                 write(STDOUT_FILENO, token, strlen(token));
                 write(STDOUT_FILENO, " ", 1);
             }
-            
-
-            
             i++;
         }
     }
@@ -84,17 +77,14 @@ void execute_bye(char **command) {
 
 void execute_cd(char **command) {
     if (command[1] == NULL) {
-        //  "cd  " back to the home path
         char *HOME = getenv("HOME");
         chdir(HOME);
     } else if (command[2] != NULL) {
         raise_error();
         return;
     } else {
-        // check if the directory exists
         DIR* dir = opendir(command[1]);
         if (dir) {
-            /* Directory exists. */
             closedir(dir);
         } else if (ENOENT == errno) {
             raise_error();
